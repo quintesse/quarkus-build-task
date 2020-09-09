@@ -1,0 +1,39 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: quarkus-build-pipeline
+spec:
+  params:
+  - name: git-url
+  - name: git-revision
+    default: master
+  - name: source-path
+    default: .
+  workspaces:
+  - name: git-source
+  - name: maven-repo
+  tasks:
+  - name: fetch-from-git
+    taskRef:
+      name: git-clone
+    params:
+    - name: url
+      value: $(params.git-url)
+    - name: revision
+      value: $(params.git-revision)
+    workspaces:
+    - name: output
+      workspace: git-source
+  - name: build-code
+    taskRef:
+      name: quarkus-build
+    params:
+    - name: DIRECTORY
+      value: $(params.source-path)
+    runAfter:
+    - fetch-from-git
+    workspaces:
+    - name: source
+      workspace: git-source
+    - name: maven-repo
+      workspace: maven-repo

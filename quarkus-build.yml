@@ -1,0 +1,39 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: quarkus-build
+spec:
+  params:
+  - name: BUILDER_IMAGE
+    description: The location of the s2i builder image.
+    default: quay.io/quarkus/centos-quarkus-maven:20.1.0-java11
+  - name: PATH_CONTEXT
+    description: The location of the project to build
+    default: .
+  - name: TLSVERIFY
+    description: Verify the TLS on the registry endpoint (for push/pull to a non-TLS registry)
+    default: 'true'
+  - name: LOGLEVEL
+    description: Log level when running the S2I binary
+    default: '0'
+  workspaces:
+  - name: source
+  - name: maven-repo
+  steps:
+  - name: permissions
+    command:
+    - chmod
+    - -R
+    - a+w
+    - .
+    image: bash
+  - name: build
+    command:
+    - mvn
+    - -Dmaven.repo.local=$(workspaces.maven-repo.path)
+    - -X
+    - package
+    image: $(params.BUILDER_IMAGE)
+    securityContext:
+      privileged: true
+    workingDir: $(workspaces.source.path)/$(params.PATH_CONTEXT)

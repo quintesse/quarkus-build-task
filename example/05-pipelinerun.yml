@@ -1,0 +1,29 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: quarkus-build-pipelinerun
+spec:
+  serviceAccountName: dockerhub-service
+  pipelineRef:
+    name: quarkus-build-pipeline
+  params:
+    - name: git-url
+      value: https://github.com/quarkusio/quarkus-quickstarts
+    - name: source-path
+      value: getting-started
+  workspaces:
+  - name: git-source
+    #persistentVolumeClaim:
+    #  claimName: maven-repo-pvc
+    volumeClaimTemplate:
+      spec:
+        accessModes: 
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+  - name: maven-repo
+    #emptyDir: {}
+    persistentVolumeClaim:
+      claimName: maven-repo-pvc
+
