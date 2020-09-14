@@ -7,33 +7,70 @@ spec:
   - name: BUILDER_IMAGE
     description: The location of the s2i builder image.
     default: quay.io/quarkus/centos-quarkus-maven:20.1.0-java11
-  - name: PATH_CONTEXT
-    description: The location of the project to build
+  - name: DIRECTORY
+    description: The directory containing the app, relative to the source repository root
     default: .
-  - name: TLSVERIFY
-    description: Verify the TLS on the registry endpoint (for push/pull to a non-TLS registry)
-    default: 'true'
-  - name: LOGLEVEL
-    description: Log level when running the S2I binary
-    default: '0'
+  - name: CACHE
+    description: The name of the volume for caching Maven artifacts and base image layers
+    default: empty-dir-volume
+  - name: INSECUREREGISTRY
+    description: Whether to allow insecure registry
+    default: "false"
+  - name: IMAGE_REGISTRY
+    description: The container registry to use
+    default: docker.io
+  - name: IMAGE_GROUP
+    description: The group the container image will be part of
+    default: tekton
+  - name: IMAGE_NAME
+    description: he name of the container image
+  - name: IMAGE_TAG
+    description: The tag of the container image.
+    default: latest
   workspaces:
   - name: source
-  - name: maven-repo
   steps:
-  - name: permissions
+  - name: set-source-permissions
     command:
     - chmod
     - -R
     - a+w
     - .
     image: bash
-  - name: build
+  - name: quarkus-add-jib-extension
     command:
     - mvn
-    - -Dmaven.repo.local=$(workspaces.maven-repo.path)
+    - quarkus:add-extension
+    - -Dextensions="container-image-jib"
+    image: $(params.BUILDER_IMAGE)
+  - name: maven-build
+    command:
+    - mvn
+    - -Dquarkus.container-image.build=true
+    - -Dquarkus.container-image.builder=jib
+    - -Dquarkus.container-image.push=true
+    - -Dquarkus.container-image.insecure=$(params.INSECUREREGISTRY)
+    - -Dquarkus.container-image.registry=$(params.IMAGE_REGISTRY)
+    - -Dquarkus.container-group.registry=$(params.IMAGE_GROUP)
+    - -Dquarkus.container-name.registry=$(params.IMAGE_NAME)
+    - -Dquarkus.container-tag.registry=$(params.IMAGE_TAG)
     - -X
     - package
     image: $(params.BUILDER_IMAGE)
     securityContext:
       privileged: true
-    workingDir: $(workspaces.source.path)/$(params.PATH_CONTEXT)
+    workingDir: $(workspaces.source.path)/$(params.DIRECTORY)
+    env:
+    - name: HOME
+      value: /workspace
+    volumeMounts:
+    - name: $(params.CACHE)
+      mountPath: /workspace/.m2
+      subPath: m2-cache
+    - name: $(params.CACHE)
+      mountPath: /workspace/.cache
+      subPath: jib-cache
+
+  volumes:
+  - name: empty-dir-volume
+    emptyDir: {}

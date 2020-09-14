@@ -9,9 +9,14 @@ spec:
     default: master
   - name: source-path
     default: .
+  - name: image-registry
+    default: docker.io
+  - name: image-group
+  - name: image-name
+  - name: image-tag
+    default: latest
   workspaces:
   - name: git-source
-  - name: maven-repo
   tasks:
   - name: fetch-from-git
     taskRef:
@@ -30,10 +35,18 @@ spec:
     params:
     - name: DIRECTORY
       value: $(params.source-path)
+    - name: CACHE
+      value: maven-repo-pvc
+    - name: IMAGE_REGISTRY
+      value: $(params.image-registry)
+    - name: IMAGE_GROUP
+      value: $(params.image-group)
+    - name: IMAGE_NAME
+      value: $(params.image-name)
+    - name: IMAGE_TAG
+      value: $(params.image-tag)
     runAfter:
     - fetch-from-git
     workspaces:
     - name: source
       workspace: git-source
-    - name: maven-repo
-      workspace: maven-repo

@@ -11,6 +11,10 @@ spec:
       value: https://github.com/quarkusio/quarkus-quickstarts
     - name: source-path
       value: getting-started
+    - name: image-group
+      value: quintesse
+    - name: image-name
+      value: tekton-quarkus-test
   workspaces:
   - name: git-source
     #persistentVolumeClaim:
@@ -22,8 +26,3 @@ spec:
         resources:
           requests:
             storage: 1Gi
-  - name: maven-repo
-    #emptyDir: {}
-    persistentVolumeClaim:
-      claimName: maven-repo-pvc
-
