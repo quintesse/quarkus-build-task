@@ -17,6 +17,7 @@ spec:
     default: latest
   workspaces:
   - name: git-source
+  - name: build-cache
   tasks:
   - name: fetch-from-git
     taskRef:
@@ -35,8 +36,6 @@ spec:
     params:
     - name: DIRECTORY
       value: $(params.source-path)
-    - name: CACHE
-      value: maven-repo-pvc
     - name: IMAGE_REGISTRY
       value: $(params.image-registry)
     - name: IMAGE_GROUP
@@ -50,3 +49,5 @@ spec:
     workspaces:
     - name: source
       workspace: git-source
+    - name: cache
+      workspace: build-cache

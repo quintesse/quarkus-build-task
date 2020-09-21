@@ -26,3 +26,7 @@ spec:
         resources:
           requests:
             storage: 1Gi
+  - name: build-cache
+    #emptyDir: {}
+    persistentVolumeClaim:
+      claimName: maven-repo-pvc

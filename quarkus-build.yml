@@ -10,9 +10,6 @@ spec:
   - name: DIRECTORY
     description: The directory containing the app, relative to the source repository root
     default: .
-  - name: CACHE
-    description: The name of the volume for caching Maven artifacts and base image layers
-    default: empty-dir-volume
   - name: INSECUREREGISTRY
     description: Whether to allow insecure registry
     default: "false"
@@ -29,6 +26,7 @@ spec:
     default: latest
   workspaces:
   - name: source
+  - name: cache
   steps:
   - name: set-source-permissions
     command:
@@ -37,15 +35,31 @@ spec:
     - a+w
     - .
     image: bash
+    workingDir: $(workspaces.source.path)/$(params.DIRECTORY)
+  - name: foo
+    command:
+    - ls
+    - -als
+    image: bash
+    workingDir: $(workspaces.source.path)/$(params.DIRECTORY)
   - name: quarkus-add-jib-extension
     command:
     - mvn
+    - -X
     - quarkus:add-extension
+    - -Dmaven.repo.local=$(workspaces.cache.path)/.m2
     - -Dextensions="container-image-jib"
     image: $(params.BUILDER_IMAGE)
+    securityContext:
+      privileged: true
+    workingDir: $(workspaces.source.path)/$(params.DIRECTORY)
+    env:
+    - name: HOME
+      value: /workspace
   - name: maven-build
     command:
     - mvn
+    - -Dmaven.repo.local=$(workspaces.cache.path)/.m2
     - -Dquarkus.container-image.build=true
     - -Dquarkus.container-image.builder=jib
     - -Dquarkus.container-image.push=true
@@ -63,14 +77,3 @@ spec:
     env:
     - name: HOME
       value: /workspace
-    volumeMounts:
-    - name: $(params.CACHE)
-      mountPath: /workspace/.m2
-      subPath: m2-cache
-    - name: $(params.CACHE)
-      mountPath: /workspace/.cache
-      subPath: jib-cache
-
-  volumes:
-  - name: empty-dir-volume
-    emptyDir: {}
