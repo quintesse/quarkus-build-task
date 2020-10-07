@@ -36,14 +36,14 @@ spec:
     params:
     - name: DIRECTORY
       value: $(params.source-path)
-    - name: IMAGE_REGISTRY
-      value: $(params.image-registry)
     - name: IMAGE_GROUP
       value: $(params.image-group)
     - name: IMAGE_NAME
       value: $(params.image-name)
     - name: IMAGE_TAG
       value: $(params.image-tag)
+    - name: REGISTRY
+      value: $(params.image-registry)
     runAfter:
     - fetch-from-git
     workspaces:

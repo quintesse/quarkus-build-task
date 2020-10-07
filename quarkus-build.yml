@@ -10,12 +10,6 @@ spec:
   - name: DIRECTORY
     description: The directory containing the app, relative to the source repository root
     default: .
-  - name: INSECUREREGISTRY
-    description: Whether to allow insecure registry
-    default: "false"
-  - name: IMAGE_REGISTRY
-    description: The container registry to use
-    default: docker.io
   - name: IMAGE_GROUP
     description: The group the container image will be part of
     default: tekton
@@ -24,6 +18,12 @@ spec:
   - name: IMAGE_TAG
     description: The tag of the container image.
     default: latest
+  - name: REGISTRY
+    description: The container registry to use
+    default: docker.io
+  - name: REGISTRY_INSECURE
+    description: Whether to allow insecure registry
+    default: "false"
   workspaces:
   - name: source
   - name: cache
@@ -75,11 +75,11 @@ spec:
     - -Dquarkus.container-image.build=true
     - -Dquarkus.container-image.builder=jib
     - -Dquarkus.container-image.push=true
-    - -Dquarkus.container-image.insecure=$(params.INSECUREREGISTRY)
-    - -Dquarkus.container-image.registry=$(params.IMAGE_REGISTRY)
     - -Dquarkus.container-image.group=$(params.IMAGE_GROUP)
     - -Dquarkus.container-image.name=$(params.IMAGE_NAME)
     - -Dquarkus.container-image.tag=$(params.IMAGE_TAG)
+    - -Dquarkus.container-image.registry=$(params.REGISTRY)
+    - -Dquarkus.container-image.insecure=$(params.REGISTRY_INSECURE)
 #    - -X
     - package
     image: $(params.BUILDER_IMAGE)
