@@ -36,22 +36,34 @@ spec:
     - .
     image: bash
     workingDir: $(workspaces.source.path)/$(params.DIRECTORY)
-  - name: foo
+  # The following two steps are pretty nasty and probably not very robust
+  - name: pom-strip-newlines
     command:
-    - ls
-    - -als
-    image: bash
-    workingDir: $(workspaces.source.path)/$(params.DIRECTORY)
-  - name: quarkus-add-jib-extension
-    command:
-    - mvn
-    - -X
-    - quarkus:add-extension
-    - -Dmaven.repo.local=$(workspaces.cache.path)/.m2
-    - -Dextensions="container-image-jib"
+    - perl
+    - -pe
+    - 's/\r?\n//'
+    - -i
+    - pom.xml
     image: $(params.BUILDER_IMAGE)
-    securityContext:
-      privileged: true
+    workingDir: $(workspaces.source.path)/$(params.DIRECTORY)
+    env:
+    - name: HOME
+      value: /workspace
+  - name: pom-add-jib-extension
+    command:
+    - perl
+    - -pe
+    - 's/<\s*\/\s*dependencies\s*>(?!\s*<\s*\/\s*dependencyManagement)/<dependency><groupId>io.quarkus<\/groupId><artifactId>quarkus-container-image-jib<\/artifactId><\/dependency><\/dependencies>/'
+    - -i
+    - pom.xml
+# This would be easier, but doesn't work inside the container for some reason
+#    command:
+#    - mvn
+#    - -X
+#    - quarkus:add-extension
+#    - -Dmaven.repo.local=$(workspaces.cache.path)/.m2
+#    - -Dextensions="container-image-jib"
+    image: $(params.BUILDER_IMAGE)
     workingDir: $(workspaces.source.path)/$(params.DIRECTORY)
     env:
     - name: HOME
@@ -65,10 +77,10 @@ spec:
     - -Dquarkus.container-image.push=true
     - -Dquarkus.container-image.insecure=$(params.INSECUREREGISTRY)
     - -Dquarkus.container-image.registry=$(params.IMAGE_REGISTRY)
-    - -Dquarkus.container-group.registry=$(params.IMAGE_GROUP)
-    - -Dquarkus.container-name.registry=$(params.IMAGE_NAME)
-    - -Dquarkus.container-tag.registry=$(params.IMAGE_TAG)
-    - -X
+    - -Dquarkus.container-image.group=$(params.IMAGE_GROUP)
+    - -Dquarkus.container-image.name=$(params.IMAGE_NAME)
+    - -Dquarkus.container-image.tag=$(params.IMAGE_TAG)
+#    - -X
     - package
     image: $(params.BUILDER_IMAGE)
     securityContext:
